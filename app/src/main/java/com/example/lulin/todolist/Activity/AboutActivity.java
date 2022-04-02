@@ -1,10 +1,10 @@
 package com.example.lulin.todolist.Activity;
 
+import android.arch.core.BuildConfig;
 import android.support.annotation.NonNull;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.example.lulin.todolist.BuildConfig;
 import com.example.lulin.todolist.R;
 
 import me.drakeet.multitype.Items;
