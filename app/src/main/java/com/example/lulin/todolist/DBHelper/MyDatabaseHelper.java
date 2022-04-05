@@ -34,6 +34,16 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
             + "frequency int,"
             + "imgId int )";
 
+    public static final String CLOCK2 = "create table Clock2 ("
+            + "id integer primary key autoincrement,"
+            + "objectId String,"
+            + "clocktitle String,"
+            + "workLength int,"
+            + "shortBreak int,"
+            + "longBreak int,"
+            + "frequency int,"
+            + "imgId int )";
+
     public static final String TIME = "create table timer_schedule ("
             + "_id integer primary key autoincrement,"
             + "clocktitle String,"
@@ -54,6 +64,7 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
     public void onCreate(SQLiteDatabase db){
         db.execSQL(TODO);
         db.execSQL(CLOCK);
+        db.execSQL(CLOCK2);
         db.execSQL(TIME);
 
     }
@@ -62,6 +73,7 @@ public class MyDatabaseHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion){
         db.execSQL("drop table if exists Todo");
         db.execSQL("drop table if exists Clock");
+        db.execSQL("drop table if exists Clock2");
         db.execSQL("drop table if exists timer_schedule");
         onCreate(db);
     }

@@ -44,6 +44,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
 import com.bumptech.glide.signature.ObjectKey;
 import com.example.lulin.todolist.DBHelper.MyDatabaseHelper;
+import com.example.lulin.todolist.Fragment.Clock2Fragment;
 import com.example.lulin.todolist.R;
 import com.example.lulin.todolist.Adapter.FragmentAdapter;
 import com.example.lulin.todolist.Fragment.ClockFragment;
@@ -212,12 +213,16 @@ public class MainActivity extends BasicActivity implements NavigationView.OnNavi
         List<String> titles = new ArrayList<>();
         titles.add(getString(R.string.tab_title_main_1));
         titles.add(getString(R.string.tab_title_main_2));
+        titles.add(getString(R.string.tab_title_main_3));
+
         mTabLayout.addTab(mTabLayout.newTab().setText(titles.get(0)));
         mTabLayout.addTab(mTabLayout.newTab().setText(titles.get(1)));
+        mTabLayout.addTab(mTabLayout.newTab().setText(titles.get(2)));
 
         List<Fragment> fragments = new ArrayList<>();
         fragments.add(new TodoFragment());
         fragments.add(new ClockFragment());
+        fragments.add(new Clock2Fragment());
 
         mViewPager.setOffscreenPageLimit(2);
 
@@ -253,7 +258,7 @@ public class MainActivity extends BasicActivity implements NavigationView.OnNavi
                                 });
                     }
                 });
-            } else {
+            } else if(position == 1 ){
                 fab.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
@@ -262,6 +267,20 @@ public class MainActivity extends BasicActivity implements NavigationView.OnNavi
                                     @Override
                                     public void onAnimationEnd() {
                                         Intent intent = new Intent(MainActivity.this, NewClockActivity.class);
+                                        startActivity(intent);
+                                    }
+                                });
+                    }
+                });
+            }else {
+                fab.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        CircularAnim.fullActivity(MainActivity.this, v)
+                                .go(new CircularAnim.OnAnimationEndListener() {
+                                    @Override
+                                    public void onAnimationEnd() {
+                                        Intent intent = new Intent(MainActivity.this, NewClock2Activity.class);
                                         startActivity(intent);
                                     }
                                 });
