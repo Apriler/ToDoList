@@ -145,7 +145,7 @@ public class CountUpTimer {
             synchronized (CountUpTimer.this) {
                 if (!mPaused) {
 //                    final long millisLeft = mStopTimeInFuture - SystemClock.elapsedRealtime();
-                    final long millisLeft = 1L;
+                    final long millisLeft = System.currentTimeMillis() - mStartTime.getTime();
 
                     if (millisLeft <= 0) {
                         onFinish();

@@ -47,7 +47,7 @@ import cn.bmob.v3.listener.UpdateListener;
 public class Clock2Service extends Service implements CountUpTimer.OnCountUpTickListener{
     public static final String ACTION_COUNTDOWN_TIMER =
             "com.example.lulin.todolist.COUNTDOWN_TIMER";
-    public static final String ACTION_START = "com.example.lulin.todolist.ACTION_START";
+    public static final String ACTION_START2 = "com.example.lulin.todolist.ACTION_START2";
     public static final String ACTION_PAUSE = "com.example.lulin.todolist.ACTION_PAUSE";
     public static final String ACTION_RESUME = "com.example.lulin.todolist.ACTION_RESUME";
     public static final String ACTION_STOP = "com.example.lulin.todolist.ACTION_STOP";
@@ -70,7 +70,7 @@ public class Clock2Service extends Service implements CountUpTimer.OnCountUpTick
 
 //    private CountDownTimer mTimer;
     private CountUpTimer mTimer;
-    private Clock2Application mApplication;
+    private ClockApplication mApplication;
     private WakeLockHelper mWakeLockHelper;
     private Clock2Dao mDBAdapter;
     private Sound mSound;
@@ -103,7 +103,7 @@ public class Clock2Service extends Service implements CountUpTimer.OnCountUpTick
     @Override
     public void onCreate() {
         super.onCreate();
-        mApplication = (Clock2Application)getApplication();
+        mApplication = (ClockApplication)getApplication();
         mWakeLockHelper = new WakeLockHelper(WAKELOCK_ID);
         mDBAdapter = new Clock2Dao(getApplicationContext());
         mSound = new Sound(getApplicationContext());
@@ -132,7 +132,7 @@ public class Clock2Service extends Service implements CountUpTimer.OnCountUpTick
             switch (action) {
                 case ACTION_AUTO_START:
 
-                case ACTION_START:
+                case ACTION_START2:
                     stopTimer();
 
                     // 自动专注

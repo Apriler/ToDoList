@@ -144,14 +144,14 @@ public class Clock2Activity extends BasicActivity {
             @Override
             public void onClick(View view) {
                 Intent i = Clock2Service.newIntent(getApplicationContext());
-                i.setAction(Clock2Service.ACTION_START);
+                i.setAction(Clock2Service.ACTION_START2);
                 i.putExtra("id",id);
                 i.putExtra("clockTitle",clockTitle);
 //                i.putExtra("workLength",workLength);
 //                i.putExtra("shortBreak",shortBreak);
 //                i.putExtra("longBreak",longBreak);
                 startService(i);
-                mApplication.start();
+//                mApplication.start();
                 updateButtons();
                 updateTitle();
                 updateRipple();
@@ -415,12 +415,13 @@ public class Clock2Activity extends BasicActivity {
     }
 
     private void reload() {
-        mApplication.reload();
+//        mApplication.reload();
 
         mProgressBar.setMaxProgress(mApplication.getMillisInTotal() / 1000);
         mProgressBar.setProgress(mApplication.getMillisUntilFinished() / 1000);
 
-        updateText(mApplication.getMillisUntilFinished());
+//        updateText(mApplication.getMillisUntilFinished());
+        updateText(0);
         updateTitle();
         updateButtons();
         updateScene();

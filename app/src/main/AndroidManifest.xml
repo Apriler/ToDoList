@@ -122,6 +122,13 @@
             android:exported="false">
         </service>
 
+        <service
+            android:name=".Service.Clock2Service"
+            android:enabled="true"
+            android:exported="false">
+        </service>
+
+
         <provider
             android:name="android.support.v4.content.FileProvider"
             android:authorities="com.example.fileprovider"
