@@ -381,6 +381,7 @@ public class ClockActivity extends BasicActivity {
                     });
 
             exitDialog.show();
+            return false;
         }
         return super.onKeyDown(keyCode, event);
     }

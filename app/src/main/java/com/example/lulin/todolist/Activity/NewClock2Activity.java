@@ -48,6 +48,7 @@ import com.pl.voiceAnimation.VoiceAnimator;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Random;
@@ -227,9 +228,9 @@ public class NewClock2Activity extends BasicActivity implements EventListener {
                                     Intent intent = new Intent(NewClock2Activity.this, Clock2Activity.class);
                                     intent.putExtra("id",id);
                                     intent.putExtra("clocktitle",clockTitle);
-                                    intent.putExtra("workLength", workLength);
-                                    intent.putExtra("shortBreak", shortBreak);
-                                    intent.putExtra("longBreak", longBreak);
+                                    intent.putExtra("addTime", new Date());
+                                    intent.putExtra("duration", 0L);
+//                                    intent.putExtra("longBreak", longBreak);
                                     startActivity(intent);
                                     finish();
                                 } else {
@@ -244,9 +245,9 @@ public class NewClock2Activity extends BasicActivity implements EventListener {
                 } else {
                     ContentValues values = new ContentValues();
                     values.put("clocktitle", clockTitle);
-                    values.put("workLength", workLength);
-                    values.put("shortBreak", shortBreak);
-                    values.put("longBreak", longBreak);
+                    values.put("addTime", new Date().toString());
+                    values.put("duration", 0L);
+//                  intent.putExtra("longBreak", longBreak);
                     values.put("frequency", frequency);
                     values.put("objectId", tomato.getObjectId());
                     values.put("imgId", imgId);
@@ -254,7 +255,7 @@ public class NewClock2Activity extends BasicActivity implements EventListener {
                     Intent intent = new Intent(NewClock2Activity.this, Clock2Activity.class);
                     intent.putExtra("id",id);
                     intent.putExtra("clocktitle",clockTitle);
-                    intent.putExtra("workLength", workLength);
+                    intent.putExtra("duration", 0L);
                     intent.putExtra("shortBreak", shortBreak);
                     intent.putExtra("longBreak", longBreak);
                     startActivity(intent);

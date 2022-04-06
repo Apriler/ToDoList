@@ -24,7 +24,7 @@ import cn.bmob.v3.listener.FindListener;
 
 
 public class Clock2Dao {
-    static final String TABLE_NAME = "timer_schedule";
+    static final String TABLE_NAME = "timer_schedule2";
     static final String _ID = "_id";
     static final String COLUMN_NAME_START_TIME = "start_time"; // 开始时间
     static final String COLUMN_NAME_END_TIME = "end_time"; // 结束时间
@@ -74,6 +74,22 @@ public class Clock2Dao {
 
         int count = db.update(
                 TABLE_NAME,
+                values,
+                selection,
+                selectionArgs);
+
+        return count > 0;
+    }
+
+    public boolean updateTime(long id,long duration) {
+        ContentValues values = new ContentValues();
+        values.put("duration", duration);
+
+        String selection = id + " = ?";
+        String[] selectionArgs = { String.valueOf(id) };
+
+        int count = db.update(
+                "Clock2",
                 values,
                 selection,
                 selectionArgs);
@@ -170,9 +186,10 @@ public class Clock2Dao {
         while(cursor.moveToNext()) {
             Tomato data = new Tomato();
             data.setTitle(cursor.getString(cursor.getColumnIndex("clocktitle")));
-            data.setWorkLength(cursor.getInt(cursor.getColumnIndex("workLength")));
-            data.setShortBreak(cursor.getInt(cursor.getColumnIndex("shortBreak")));
-            data.setLongBreak(cursor.getInt(cursor.getColumnIndex("longBreak")));
+            data.setAddTime(cursor.getInt(cursor.getColumnIndex("addTime")));
+            data.setDuration(cursor.getLong(cursor.getColumnIndex("duration")));
+//            data.setShortBreak(cursor.getInt(cursor.getColumnIndex("shortBreak")));
+//            data.setLongBreak(cursor.getInt(cursor.getColumnIndex("longBreak")));
             data.setFrequency(cursor.getInt(cursor.getColumnIndex("frequency")));
             data.setObjectId(cursor.getString(cursor.getColumnIndex("objectId")));
             data.setImgId(cursor.getInt(cursor.getColumnIndex("imgId")));

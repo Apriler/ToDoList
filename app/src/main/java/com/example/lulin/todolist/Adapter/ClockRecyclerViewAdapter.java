@@ -95,7 +95,7 @@ public class ClockRecyclerViewAdapter extends RecyclerView.Adapter<ClockRecycler
                 .placeholder(R.drawable.ic_img1);
 
         ViewHolder.clock_title.setText(tomatoList.get(tomatoList.size()-1-i).getTitle());
-        ViewHolder.work_time.setText(tomatoList.get(tomatoList.size()-1-i).getWorkLength() + " 分钟");
+        ViewHolder.work_time.setText(tomatoList.get(tomatoList.size()-1-i).getDuration() + " 秒");
         ViewHolder.clock_card_bg.setImageBitmap(BitmapUtils.readBitMap(context,tomatoList.get(tomatoList.size()-1-i).getImgId()));
 
     }

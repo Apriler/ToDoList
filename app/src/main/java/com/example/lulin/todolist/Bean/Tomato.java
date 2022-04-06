@@ -11,6 +11,9 @@ public class Tomato extends BmobObject {
     private int shortBreak;
     private int longBreak;
     private int frequency;
+    private int addTime;
+    private long duration;
+
 
     public void setTitle(String title){
         this.title = title;
@@ -60,5 +63,21 @@ public class Tomato extends BmobObject {
     }
     public int getFrequency(){
         return frequency;
+    }
+
+    public int getAddTime() {
+        return addTime;
+    }
+
+    public void setAddTime(int addTime) {
+        this.addTime = addTime;
+    }
+
+    public long getDuration() {
+        return duration;
+    }
+
+    public void setDuration(long duration) {
+        this.duration = duration;
     }
 }

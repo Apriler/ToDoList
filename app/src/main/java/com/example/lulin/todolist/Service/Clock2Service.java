@@ -431,7 +431,7 @@ public class Clock2Service extends Service implements CountUpTimer.OnCountUpTick
     }
 
     private String getNotificationTitle() {
-        int scene = mApplication.getScene();
+        int scene = ClockApplication.SCENE_WORK;
         int state = mApplication.getState();
         String title;
 

@@ -46,6 +46,7 @@ public class Clock2Fragment extends Fragment {
     private ItemTouchHelper.Callback callback;
     private int workLength, shortBreak,longBreak,frequency;
     private String clockTitle;
+    private long duration;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -83,6 +84,7 @@ public class Clock2Fragment extends Fragment {
                 shortBreak = clockList.get(clockRecyclerViewAdapter.getItemCount()-1-position).getShortBreak();
                 longBreak = clockList.get(clockRecyclerViewAdapter.getItemCount()-1-position).getLongBreak();
                 frequency = clockList.get(clockRecyclerViewAdapter.getItemCount()-1-position).getFrequency();
+                duration = clockList.get(clockRecyclerViewAdapter.getItemCount()-1-position).getDuration();
 
                 SPUtils.put(context,"pref_key_work_length", workLength);
                 SPUtils.put(context,"pref_key_short_break", shortBreak);
@@ -91,9 +93,9 @@ public class Clock2Fragment extends Fragment {
 
                 Intent intent = new Intent(getActivity(), Clock2Activity.class);
                 intent.putExtra("clocktitle",clockTitle);
-                intent.putExtra("workLength", workLength);
-                intent.putExtra("shortBreak", shortBreak);
-                intent.putExtra("longBreak", longBreak);
+                intent.putExtra("duration", duration);
+//                intent.putExtra("shortBreak", shortBreak);
+//                intent.putExtra("longBreak", longBreak);
                 startActivity(intent);
             }
 

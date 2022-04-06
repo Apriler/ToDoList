@@ -3,6 +3,7 @@ package com.example.lulin.todolist.Utils;
 import android.os.Handler;
 import android.os.Message;
 import android.os.SystemClock;
+import android.util.Log;
 
 import java.util.Date;
 import java.util.concurrent.TimeUnit;
@@ -61,7 +62,25 @@ public class CountUpTimer {
      */
     private Date mStartTime;
 
-//    private OnCountDownTickListener mOnCountDownTickListener;
+
+    /**
+     * 暂停时刻的时间(单位毫秒), 如果暂停会变化
+     */
+    private long mTpause;
+
+    /**
+     * 已经走过的时间(单位毫秒), 如果暂停会变化
+     */
+    private long mTspend;
+
+    /**
+     * 重新启动时的时刻。
+     */
+    private long mTrestart;
+
+
+
+    //    private OnCountDownTickListener mOnCountDownTickListener;
     private OnCountUpTickListener mOnCountUpTickListener;
 
     public CountUpTimer(long millisInFuture) {
@@ -80,6 +99,9 @@ public class CountUpTimer {
             //
 //            mStopTimeInFuture = SystemClock.elapsedRealtime() + mMillisInFuture;
             mStartTime = new Date();
+        mTspend = 0;
+        mTpause = mStartTime.getTime();
+        mTrestart = mStartTime.getTime();
             mHandler.sendMessageDelayed(mHandler.obtainMessage(MSG), 1);
             mIsRunning = true;
             mPaused = false;
@@ -93,11 +115,15 @@ public class CountUpTimer {
         mMillisUntilFinished = mStopTimeInFuture - SystemClock.elapsedRealtime();
         mIsRunning = false;
         mPaused = true;
+        mTpause = System.currentTimeMillis();
+        // 记录下当前暂停时刻的时间戳
+        mTspend = mTspend +  mTpause - mTrestart;
     }
 
     public long resume() {
         // 结束的时间设置为当前时间加剩余时间
         mStopTimeInFuture = SystemClock.elapsedRealtime() + mMillisUntilFinished;
+        mTrestart = System.currentTimeMillis();
         mHandler.sendMessage(mHandler.obtainMessage(MSG));
         mIsRunning = true;
         mPaused = false;
@@ -145,11 +171,11 @@ public class CountUpTimer {
             synchronized (CountUpTimer.this) {
                 if (!mPaused) {
 //                    final long millisLeft = mStopTimeInFuture - SystemClock.elapsedRealtime();
-                    final long millisLeft = System.currentTimeMillis() - mStartTime.getTime();
-
-                    if (millisLeft <= 0) {
-                        onFinish();
-                    } else {
+//                    final long millisLeft = System.currentTimeMillis() - mStartTime.getTime();
+                    final long millisLeft = System.currentTimeMillis() - mTrestart + mTspend;
+//                    if (millisLeft <= 0) {
+//                        onFinish();
+//                    } else {
                         long lastTickStart = SystemClock.elapsedRealtime();
                         onTick(millisLeft);
 
@@ -161,7 +187,7 @@ public class CountUpTimer {
                         while (delay < 0) delay += mCountupInterval;
 
                         sendMessageDelayed(obtainMessage(MSG), delay);
-                    }
+//                    }
                 }
             }
         }

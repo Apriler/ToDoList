@@ -5,12 +5,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
+import android.database.sqlite.SQLiteDatabase;
 import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.support.design.widget.Snackbar;
 import android.util.Log;
@@ -18,6 +20,7 @@ import android.view.KeyEvent;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
@@ -29,9 +32,15 @@ import android.widget.Toast;
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.request.RequestOptions;
+import com.example.lulin.todolist.Bean.Clock;
+import com.example.lulin.todolist.Bean.User;
+import com.example.lulin.todolist.DBHelper.MyDatabaseHelper;
+import com.example.lulin.todolist.Dao.Clock2Dao;
+import com.example.lulin.todolist.Dao.ClockDao;
 import com.example.lulin.todolist.R;
 import com.example.lulin.todolist.Service.Clock2Service;
 import com.example.lulin.todolist.Service.FocusService;
+import com.example.lulin.todolist.Utils.NetWorkUtils;
 import com.example.lulin.todolist.Utils.SPUtils;
 import com.example.lulin.todolist.Utils.TimeFormatUtil;
 import com.example.lulin.todolist.Widget.Clock2Application;
@@ -40,7 +49,9 @@ import com.example.lulin.todolist.Widget.ClockProgressBar;
 import com.example.lulin.todolist.Widget.RippleWrapper;
 import com.jaouan.compoundlayout.RadioLayout;
 
+import java.util.Date;
 import java.util.Random;
+import java.util.concurrent.TimeUnit;
 
 import es.dmoral.toasty.Toasty;
 import me.drakeet.materialdialog.MaterialDialog;
@@ -61,24 +72,26 @@ public class Clock2Activity extends BasicActivity {
     private RippleWrapper mRippleWrapper;
     private long mLastClickTime = 0;
     private String clockTitle;
+    private long duration;
     private static final String KEY_FOCUS = "focus";
     private ImageView clock_bg;
     private ImageButton bt_music;
     private static int[] imageArray = new int[]{R.drawable.ic_img2,
-                                                R.drawable.ic_img3,
-                                                R.drawable.ic_img4,
-                                                R.drawable.ic_img5,
-                                                R.drawable.ic_img6,
-                                                R.drawable.ic_img7,
-                                                R.drawable.ic_img8,
-                                                R.drawable.ic_img9,
-                                                R.drawable.ic_img10,
-                                                R.drawable.ic_img11,
-                                                R.drawable.ic_img12};
+            R.drawable.ic_img3,
+            R.drawable.ic_img4,
+            R.drawable.ic_img5,
+            R.drawable.ic_img6,
+            R.drawable.ic_img7,
+            R.drawable.ic_img8,
+            R.drawable.ic_img9,
+            R.drawable.ic_img10,
+            R.drawable.ic_img11,
+            R.drawable.ic_img12};
     private int bg_id;
-    private int workLength, shortBreak,longBreak;
+    private int workLength, shortBreak, longBreak;
     private long id;
-    private RadioLayout river,rain,wave,bird,fire;
+    private RadioLayout river, rain, wave, bird, fire;
+    private Clock2Dao mDBAdapter;
 
     public static Intent newIntent(Context context) {
         return new Intent(context, MainActivity.class);
@@ -91,39 +104,42 @@ public class Clock2Activity extends BasicActivity {
         setContentView(R.layout.activity_clock2);
         Intent intent = getIntent();
         clockTitle = intent.getStringExtra("clocktitle");
+        duration = intent.getLongExtra("duration",0L);
 //        workLength = intent.getIntExtra("workLength",ClockApplication.DEFAULT_WORK_LENGTH);
 //        shortBreak = intent.getIntExtra("shortBreak",ClockApplication.DEFAULT_SHORT_BREAK);
 //        longBreak = intent.getIntExtra("longBreak",ClockApplication.DEFAULT_LONG_BREAK);
-        id = intent.getLongExtra("id",1);
+        id = intent.getLongExtra("id", 1);
 
-        mApplication = (ClockApplication)getApplication();
-
-        mBtnStart = (Button)findViewById(R.id.btn_start2);
-        mBtnPause = (Button)findViewById(R.id.btn_pause2);
-        mBtnResume = (Button)findViewById(R.id.btn_resume2);
-        mBtnStop = (Button)findViewById(R.id.btn_stop2);
-        mBtnSkip = (Button)findViewById(R.id.btn_skip2);
-        mTextCountDown = (TextView)findViewById(R.id.text_count_down2);
-        mTextTimeTile = (TextView)findViewById(R.id.text_time_title2);
-        mProgressBar = (ClockProgressBar)findViewById(R.id.tick_progress_bar2);
-        mRippleWrapper = (RippleWrapper)findViewById(R.id.ripple_wrapper2);
-        focus_tint = (TextView)findViewById(R.id.focus_hint2);
+        mApplication = (ClockApplication) getApplication();
+        setCacheCurrentStatus(ClockApplication.STATE_WAIT);
+        mBtnStart = (Button) findViewById(R.id.btn_start2);
+        mBtnPause = (Button) findViewById(R.id.btn_pause2);
+        mBtnResume = (Button) findViewById(R.id.btn_resume2);
+        mBtnStop = (Button) findViewById(R.id.btn_stop2);
+        mBtnSkip = (Button) findViewById(R.id.btn_skip2);
+        mTextCountDown = (TextView) findViewById(R.id.text_count_down2);
+        mTextTimeTile = (TextView) findViewById(R.id.text_time_title2);
+        mProgressBar = (ClockProgressBar) findViewById(R.id.tick_progress_bar2);
+        mRippleWrapper = (RippleWrapper) findViewById(R.id.ripple_wrapper2);
+        focus_tint = (TextView) findViewById(R.id.focus_hint2);
         bt_music = (ImageButton) findViewById(R.id.bt_music2);
         clock_bg = (ImageView) findViewById(R.id.clock_bg2);
-        if(isSoundOn()){
+        mDBAdapter = new Clock2Dao(getApplicationContext());
+        if (isSoundOn()) {
             bt_music.setEnabled(true);
             bt_music.setImageDrawable(getResources().getDrawable(R.drawable.ic_music));
         } else {
             bt_music.setEnabled(false);
             bt_music.setImageDrawable(getResources().getDrawable(R.drawable.ic_music_off));
         }
-        SPUtils.put(this,"music_id",R.raw.river);
+        SPUtils.put(this, "music_id", R.raw.river);
         Toasty.normal(this, "双击界面打开或关闭白噪音", Toast.LENGTH_SHORT).show();
+        updateText(duration);
         initActions();
         initBackgroundImage();
     }
 
-    private void initBackgroundImage(){
+    private void initBackgroundImage() {
 
         Random random = new Random();
         bg_id = imageArray[random.nextInt(11)];
@@ -145,17 +161,18 @@ public class Clock2Activity extends BasicActivity {
             public void onClick(View view) {
                 Intent i = Clock2Service.newIntent(getApplicationContext());
                 i.setAction(Clock2Service.ACTION_START2);
-                i.putExtra("id",id);
-                i.putExtra("clockTitle",clockTitle);
+                i.putExtra("id", id);
+                i.putExtra("clockTitle", clockTitle);
 //                i.putExtra("workLength",workLength);
 //                i.putExtra("shortBreak",shortBreak);
 //                i.putExtra("longBreak",longBreak);
                 startService(i);
-//                mApplication.start();
+                mApplication.start();
+                setCacheCurrentStatus(ClockApplication.STATE_RUNNING);
                 updateButtons();
                 updateTitle();
                 updateRipple();
-                if (getIsFocus(Clock2Activity.this)){
+                if (getIsFocus(Clock2Activity.this)) {
                     startService(new Intent(Clock2Activity.this, FocusService.class));
                     focus_tint.setVisibility(View.VISIBLE);
                 }
@@ -169,7 +186,7 @@ public class Clock2Activity extends BasicActivity {
                 i.setAction(Clock2Service.ACTION_PAUSE);
                 i.putExtra("time_left", (String) mTextCountDown.getText());
                 startService(i);
-
+                setCacheCurrentStatus(ClockApplication.STATE_PAUSE);
                 mApplication.pause();
                 updateButtons();
                 updateRipple();
@@ -182,7 +199,7 @@ public class Clock2Activity extends BasicActivity {
                 Intent i = Clock2Service.newIntent(getApplicationContext());
                 i.setAction(Clock2Service.ACTION_RESUME);
                 startService(i);
-
+                setCacheCurrentStatus(ClockApplication.STATE_RUNNING);
                 mApplication.resume();
                 updateButtons();
                 updateRipple();
@@ -193,9 +210,9 @@ public class Clock2Activity extends BasicActivity {
             @Override
             public void onClick(View view) {
                 final MaterialDialog exitDialog = new MaterialDialog(Clock2Activity.this);
-                exitDialog.setTitle("提示")
-                        .setMessage("放弃后，本次番茄钟将作废")
-                        .setPositiveButton("确定", new View.OnClickListener() {
+                exitDialog.setTitle("0.0")
+                        .setMessage("你要离开了嘛？")
+                        .setPositiveButton("是的，是的^_^", new View.OnClickListener() {
                             @Override
                             public void onClick(View view) {
                                 Intent intent2 = new Intent(Clock2Activity.this, MainActivity.class);
@@ -205,7 +222,7 @@ public class Clock2Activity extends BasicActivity {
                                 exitApp();
                             }
                         })
-                        .setNegativeButton("取消", new View.OnClickListener() {
+                        .setNegativeButton("才不是呢-。-", new View.OnClickListener() {
                             public void onClick(View view) {
                                 exitDialog.dismiss();
                             }
@@ -222,7 +239,7 @@ public class Clock2Activity extends BasicActivity {
                 Intent i = Clock2Service.newIntent(getApplicationContext());
                 i.setAction(Clock2Service.ACTION_STOP);
                 startService(i);
-
+                setCacheCurrentStatus(ClockApplication.STATE_WAIT);
                 mApplication.skip();
                 reload();
             }
@@ -285,7 +302,7 @@ public class Clock2Activity extends BasicActivity {
                 river.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        SPUtils.put(Clock2Activity.this,"music_id",R.raw.river);
+                        SPUtils.put(Clock2Activity.this, "music_id", R.raw.river);
                         Intent i = Clock2Service.newIntent(getApplicationContext());
                         i.setAction(Clock2Service.ACTION_CHANGE_MUSIC);
                         startService(i);
@@ -294,7 +311,7 @@ public class Clock2Activity extends BasicActivity {
                 rain.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        SPUtils.put(Clock2Activity.this,"music_id",R.raw.rain);
+                        SPUtils.put(Clock2Activity.this, "music_id", R.raw.rain);
                         Intent i = Clock2Service.newIntent(getApplicationContext());
                         i.setAction(Clock2Service.ACTION_CHANGE_MUSIC);
                         startService(i);
@@ -303,7 +320,7 @@ public class Clock2Activity extends BasicActivity {
                 wave.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        SPUtils.put(Clock2Activity.this,"music_id",R.raw.ocean);
+                        SPUtils.put(Clock2Activity.this, "music_id", R.raw.ocean);
                         Intent i = Clock2Service.newIntent(getApplicationContext());
                         i.setAction(Clock2Service.ACTION_CHANGE_MUSIC);
                         startService(i);
@@ -312,7 +329,7 @@ public class Clock2Activity extends BasicActivity {
                 bird.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        SPUtils.put(Clock2Activity.this,"music_id",R.raw.bird);
+                        SPUtils.put(Clock2Activity.this, "music_id", R.raw.bird);
                         Intent i = Clock2Service.newIntent(getApplicationContext());
                         i.setAction(Clock2Service.ACTION_CHANGE_MUSIC);
                         startService(i);
@@ -321,14 +338,14 @@ public class Clock2Activity extends BasicActivity {
                 fire.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        SPUtils.put(Clock2Activity.this,"music_id",R.raw.fire);
+                        SPUtils.put(Clock2Activity.this, "music_id", R.raw.fire);
                         Intent i = Clock2Service.newIntent(getApplicationContext());
                         i.setAction(Clock2Service.ACTION_CHANGE_MUSIC);
                         startService(i);
                     }
                 });
                 final MaterialDialog alert = new MaterialDialog(Clock2Activity.this);
-                alert.setPositiveButton("关闭", new View.OnClickListener(){
+                alert.setPositiveButton("关闭", new View.OnClickListener() {
                     @Override
                     public void onClick(View view) {
                         alert.dismiss();
@@ -349,9 +366,61 @@ public class Clock2Activity extends BasicActivity {
 //
 //    }
 
+    /**
+     * 记录当前状态
+     * // 当前状态
+     * public static final int STATE_WAIT = 0;
+     * public static final int STATE_RUNNING = 1;
+     * public static final int STATE_PAUSE = 2;
+     * public static final int STATE_FINISH = 3;
+     *
+     * @param value
+     */
+    public void setCacheCurrentStatus(int value) {
+        // 修改 SharedPreferences
+        SharedPreferences.Editor editor = PreferenceManager
+                .getDefaultSharedPreferences(getApplicationContext()).edit();
+        switch (value){
+            case 0:
+                Log.i("Clock2Activity","clock 状态改变为 ：STATE_WAIT");
+                break;
+            case 1:
+                Log.i("Clock2Activity","clock 状态改变为 ：STATE_RUNNING");
+                break;
+            case 2:
+                Log.i("Clock2Activity","clock 状态改变为 ：STATE_PAUSE");
+                break;
+            case 3:
+                Log.i("Clock2Activity","clock 状态改变为 ：STATE_FINISH");
+                break;
+        }
+        editor.putInt("aaa", value);
+        try {
+            editor.apply();
+        } catch (AbstractMethodError unused) {
+            editor.commit();
+        }
+
+    }
+
+    /**
+     * 获取当前状态
+     *
+     * @return
+     */
+    private int getCacheCurrentStatus() {
+        return PreferenceManager.getDefaultSharedPreferences(this).getInt("aaa", 3);
+    }
+    private void saveTime() {
+        mDBAdapter.open();
+        mDBAdapter.updateTime(id,duration);
+        mDBAdapter.close();
+
+    }
+
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
-        if(keyCode==KeyEvent.KEYCODE_BACK&&event.getAction()==KeyEvent.ACTION_DOWN){
+        if (keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN) {
 //            Snackbar.make(layout, "是否删除？（滑动取消）", Snackbar.LENGTH_LONG)
 //                    .setAction("确定", new View.OnClickListener() {
 //                        @Override
@@ -381,6 +450,7 @@ public class Clock2Activity extends BasicActivity {
                     });
 
             exitDialog.show();
+            return false;
         }
         return super.onKeyDown(keyCode, event);
     }
@@ -411,12 +481,24 @@ public class Clock2Activity extends BasicActivity {
         super.onDestroy();
         getWindow().clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
         releaseImageViewResouce(clock_bg);
-
     }
 
     private void reload() {
 //        mApplication.reload();
+//        switch (getCacheCurrentStatus()) {
+//            case mApplication.STATE_WAIT:
+//            case mApplication.STATE_FINISH:
 
+//                mMillisInTotal = TimeUnit.MINUTES.toMillis(getMinutesInTotal());
+//                mMillisUntilFinished = mMillisInTotal;
+//                break;
+//            case mApplication.STATE_RUNNING:
+//                if (SystemClock.elapsedRealtime() > mStopTimeInFuture) {
+//                    finish();
+//                }
+//                break;
+//        }
+//        setCacheCurrentStatus(ClockApplication.STATE_RUNNING);
         mProgressBar.setMaxProgress(mApplication.getMillisInTotal() / 1000);
         mProgressBar.setProgress(mApplication.getMillisUntilFinished() / 1000);
 
@@ -424,7 +506,7 @@ public class Clock2Activity extends BasicActivity {
         updateText(0);
         updateTitle();
         updateButtons();
-        updateScene();
+//        updateScene();
         updateRipple();
         updateAmount();
 
@@ -457,8 +539,9 @@ public class Clock2Activity extends BasicActivity {
     }
 
     private void updateButtons() {
-        int state = mApplication.getState();
-        int scene = mApplication.getScene();
+//        int state = mApplication.getState();
+//        int scene = mApplication.getScene();
+        int state = getCacheCurrentStatus();
         boolean isPomodoroMode = getSharedPreferences()
                 .getBoolean("pref_key_pomodoro_mode", true);
 
@@ -467,7 +550,7 @@ public class Clock2Activity extends BasicActivity {
                 state == ClockApplication.STATE_WAIT || state == ClockApplication.STATE_FINISH ?
                         View.VISIBLE : View.GONE);
 
-        if (isPomodoroMode) {
+        if (false) {
             mBtnPause.setVisibility(View.GONE);
             mBtnResume.setVisibility(View.GONE);
         } else {
@@ -475,31 +558,34 @@ public class Clock2Activity extends BasicActivity {
                     View.VISIBLE : View.GONE);
             mBtnResume.setVisibility(state == ClockApplication.STATE_PAUSE ?
                     View.VISIBLE : View.GONE);
-        }
-
-        if (scene == ClockApplication.SCENE_WORK) {
-            mBtnSkip.setVisibility(View.GONE);
-            if (isPomodoroMode) {
-                mBtnStop.setVisibility(!(state == ClockApplication.STATE_WAIT ||
+            mBtnStop.setVisibility(!(state == ClockApplication.STATE_WAIT ||
                         state == ClockApplication.STATE_FINISH) ?
                         View.VISIBLE : View.GONE);
-            } else {
-                mBtnStop.setVisibility(state == ClockApplication.STATE_PAUSE ?
-                        View.VISIBLE : View.GONE);
-            }
-
-        } else {
-            mBtnStop.setVisibility(View.GONE);
-            if (isPomodoroMode) {
-                mBtnSkip.setVisibility(!(state == ClockApplication.STATE_WAIT ||
-                        state == ClockApplication.STATE_FINISH) ?
-                        View.VISIBLE : View.GONE);
-            } else {
-                mBtnSkip.setVisibility(state == ClockApplication.STATE_PAUSE ?
-                        View.VISIBLE : View.GONE);
-            }
-
         }
+
+//        if (scene == ClockApplication.SCENE_WORK) {
+//            mBtnSkip.setVisibility(View.GONE);
+//            if (isPomodoroMode) {
+//                mBtnStop.setVisibility(!(state == ClockApplication.STATE_WAIT ||
+//                        state == ClockApplication.STATE_FINISH) ?
+//                        View.VISIBLE : View.GONE);
+//            } else {
+//                mBtnStop.setVisibility(state == ClockApplication.STATE_PAUSE ?
+//                        View.VISIBLE : View.GONE);
+//            }
+//
+//        } else {
+//            mBtnStop.setVisibility(View.GONE);
+//            if (isPomodoroMode) {
+//                mBtnSkip.setVisibility(!(state == ClockApplication.STATE_WAIT ||
+//                        state == ClockApplication.STATE_FINISH) ?
+//                        View.VISIBLE : View.GONE);
+//            } else {
+//                mBtnSkip.setVisibility(state == ClockApplication.STATE_PAUSE ?
+//                        View.VISIBLE : View.GONE);
+//            }
+//
+//        }
     }
 
     public void updateScene() {
@@ -542,7 +628,7 @@ public class Clock2Activity extends BasicActivity {
 
     private void updateAmount() {
         long amount = getSharedPreferences().getLong("pref_key_amount_durations", 0);
-        TextView textView = (TextView)findViewById(R.id.amount_durations2);
+        TextView textView = (TextView) findViewById(R.id.amount_durations2);
         textView.setText(getResources().getString(R.string.amount_durations, amount));
     }
 
@@ -574,14 +660,15 @@ public class Clock2Activity extends BasicActivity {
     }
 
     private void exitApp() {
+        saveTime();
         stopService(Clock2Service.newIntent(getApplicationContext()));
         mApplication.exit();
         finish();
     }
 
-    private void setStatusBar(){
+    private void setStatusBar() {
         getWindow().requestFeature(Window.FEATURE_NO_TITLE);
-        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             Window window = getWindow();
             window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
                     | WindowManager.LayoutParams.FLAG_TRANSLUCENT_NAVIGATION);
@@ -595,7 +682,7 @@ public class Clock2Activity extends BasicActivity {
     }
 
     //判断是否开启专注模式
-    private boolean getIsFocus(Context context){
+    private boolean getIsFocus(Context context) {
 
         Boolean isFocus = (Boolean) SPUtils.get(context, KEY_FOCUS, false);
 
@@ -604,7 +691,7 @@ public class Clock2Activity extends BasicActivity {
     }
 
     //判断是否开启白噪音
-    private boolean isSoundOn(){
+    private boolean isSoundOn() {
         return getSharedPreferences().getBoolean("pref_key_tick_sound", true);
     }
 
